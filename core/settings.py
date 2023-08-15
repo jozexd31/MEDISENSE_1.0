@@ -1,4 +1,11 @@
 from pathlib import Path
+#ingresar a archivos de servidor
+import os
+import environ
+
+#variables de entorno/ambiente 
+env = environ.Env()
+environ.Env.read_env()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -7,18 +14,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-dvbytck8)-2moh1tx7mx=ezki@m-+x38vrbax@zyth5k%88bpi'
+################################### PEDIMOS INFORMACION DEL ENVIROMENT Y LLAMAMOS A LLAVE SECRETA
+SECRET_KEY = os.environ.get('LLAVE_SECRETA')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG')
+################################### LLAMAMOS LISTAS DE AMBIENTE LOCALES Y HOST PERMITIDOS
+ALLOWED_HOSTS = env.list('ALLOWED_HOST_DEV')
 
-ALLOWED_HOSTS = []
 
-
-# Application definition
-
-INSTALLED_APPS = [
+################################### DEFINIMOS NUESTRAS APLICACIONES INSTALADAS
+DJANGO_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -26,8 +32,40 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 ]
+#APPS DEL PROYECTO
+APPS_PROYECTO = [
+    
+]
+
+#APPS EXTERNAS QUE LLAMAMOS
+APPS_TERCEROS = [
+    #LLAMAMOS A COREHEADERS
+    'corsheaders',
+    'rest_framework',
+    'ckeditor',
+    'ckeditor_uploader'
+]
+############################ LAS 3 TIPOS DE APPS QUE SE DEPLEGARAN E INSTALAR
+INSTALLED_APPS = DJANGO_APPS + APPS_PROYECTO + APPS_TERCEROS
+
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'Custom',
+        'toolbar_Custom': [
+            ['Bold', 'Italic', 'Underline'],
+            ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'],
+            ['Link', 'Unlink'],
+            ['RemoveFormat', 'Source']
+        ],
+        'autoParagraph': False
+    }
+}
+
+CKEDITOR_UPLOAD_PATH = "/media/"
+
 
 MIDDLEWARE = [
+    
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -35,6 +73,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware'
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -42,7 +81,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'build')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -91,9 +130,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'EN'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'UTC-5'
 
 USE_I18N = True
 
@@ -103,9 +142,55 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+############################### DIRECTORIO PARA DESPLEGAR
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_URL = '/static/'
+
+########################## DIRECTORIO DONDE SE GUARDAN LAS IMAGENES 
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'build/static')
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+######################################PERMISOS DE DJANGO SIN LOGUEARSE READ ONLY
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.renderers.JSONRenderer'
+    ]
+}
+#################################QUIEN PUEDE ACCEDER
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+]
+
+
+CORS_ORIGIN_WHITELIST_DEV = env.list('CORS_ORIGIN_WHITELIST_DEV')
+CSRF_TRUSTED_ORIGINS_DEV = env.list('CSRF_TRUSTED_ORIGINS_DEV')
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+if not DEBUG:
+    ALLOWED_HOSTS.env.list('ALLOWED_HOST_DEPLOY')
+    CORS_ORIGIN_WHITELIST_DEPLOY = env.list('CORS_ORIGIN_WHITELIST_DEPLOY')
+    CSRF_TRUSTED_ORIGINS_DEPLOY = env.list('CSRF_TRUSTED_ORIGINS_DEPLOY')
+
+    DATABASES = {
+        "default": env.db("DATABASE_ULR"),
+
+    }
+    ################################ EVITAMOS DUPLICADOS EN LA DB
+    DATABASES  ["default"]["ATOMIC_REQUEST"] = True
+
+
+STATICFILES_DIRS=[
+    os.path.join(BASE_DIR, 'build/static')
+]
